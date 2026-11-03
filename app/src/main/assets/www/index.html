@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cpe Notes</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:sans-serif;background:#ece7f3;color:#222;display:flex;flex-direction:column;overflow:hidden}
+button,select{font-size:15px;padding:7px 10px;border:1px solid #bbb;border-radius:8px;background:#fff;flex:none}
+header{background:#4a148c;color:#fff;display:flex;align-items:center;gap:6px;padding:8px 10px;flex:none}
+header h1{font-size:18px;margin:0;flex:1}
+header button{background:#6a1b9a;color:#fff;border:none}
+#bar{display:flex;gap:6px;padding:6px;overflow-x:auto;background:#fff;border-bottom:1px solid #ccc;flex:none}
+#main{flex:1;overflow-y:auto;padding-bottom:10px}
+#title{width:calc(100% - 20px);margin:10px;padding:10px;font-size:18px;border:1px solid #ccc;border-radius:10px}
+#sheet{margin:0 10px;min-height:55vh;padding:16px;border-radius:12px;box-shadow:0 2px 8px #0003;outline:none;font-size:18px;line-height:1.5;background:#fff9c4;overflow-wrap:anywhere}
+#sheet audio{width:100%;margin:6px 0}
+#foot{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:#fff;border-top:1px solid #ccc;flex:none;flex-wrap:wrap}
+#drawer{position:fixed;left:0;top:0;bottom:0;width:80%;max-width:320px;background:#fff;z-index:10;transform:translateX(-100%);transition:.25s;overflow:auto;box-shadow:2px 0 10px #0005}
+#drawer.open{transform:none}
+#drawer h2{margin:0;padding:14px;background:#4a148c;color:#fff;font-size:17px}
+.item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #eee;gap:8px}
+.item span{flex:1}
+#rec.on{background:#d32f2f;color:#fff}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:30;pointer-events:none}
+#toast.show{opacity:1}
+#modal{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:20}
+#modal.show{display:flex}
+#box{background:#fff;border-radius:14px;padding:16px;width:86%;max-width:340px}
+#mt{font-weight:bold;margin-bottom:10px}
+#grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.sw{width:100%;aspect-ratio:1;border-radius:50%;border:2px solid #888;padding:0}
+#hex{width:100%;margin-top:12px;padding:8px;font-size:16px;border:1px solid #ccc;border-radius:8px}
+#mbtns{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<div id="drawer"><h2>📚 Mis notas</h2><div id="list"></div></div>
+
+<header>
+  <button id="menu">☰</button>
+  <h1>📝 Cpe Notes</h1>
+  <button id="new">＋ Nueva</button>
+  <button id="save">💾</button>
+</header>
+
+<div id="bar">
+  <select id="font">
+    <option value="sans-serif">Normal</option>
+    <option value="serif">Serif</option>
+    <option value="monospace">Monoespaciada</option>
+    <option value="cursive">Cursiva</option>
+    <option value="Georgia">Georgia</option>
+    <option value="Verdana">Verdana</option>
+    <option value="Courier New">Courier</option>
+    <option value="Comic Sans MS">Comic Sans</option>
+  </select>
+  <select id="size">
+    <option value="2">Pequeño</option>
+    <option value="3" selected>Normal</option>
+    <option value="5">Grande</option>
+    <option value="6">Muy grande</option>
+    <option value="7">Enorme</option>
+  </select>
+  <button data-cmd="bold"><b>B</b></button>
+  <button data-cmd="italic"><i>I</i></button>
+  <button data-cmd="underline"><u>S</u></button>
+  <button data-cmd="strikeThrough"><s>T</s></button>
+  <button id="bcolor">🅰️ Color</button>
+  <button id="bhl">🖍️ Marcador</button>
+  <button id="bpage">🎨 Hoja</button>
+  <button id="rec">🎙️ Grabar</button>
+</div>
+
+<div id="main">
+  <input id="title" placeholder="Título de la nota">
+  <div id="sheet" contenteditable="true"></div>
+</div>
+
+<div id="foot">
+  <button id="prev">◀</button>
+  <span id="pg">1 / 1</span>
+  <button id="next">▶</button>
+  <button id="addp">＋ Página</button>
+  <button id="delp">🗑️ Página</button>
+</div>
+
+<div id="modal"><div id="box">
+  <div id="mt">Color</div>
+  <div id="grid"></div>
+  <input id="hex" placeholder="#RRGGBB (opcional)">
+  <div id="mbtns"><button id="mnone">Quitar</button><button id="mok">Aplicar</button><button id="mcl">Cerrar</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ed = $("#sheet");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let note = {id: null, title: "", pages: [{html: "", color: "#fff9c4"}]};
+let cur = 0, dirty = false, saved = null;
+
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1800);}
+
+/* ---------- Base de datos (IndexedDB) ---------- */
+let db;
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("cpenotes", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("notes", {keyPath: "id"});
+    r.onsuccess = () => { db = r.result; res(); };
+    r.onerror = () => rej(r.error);
+  });
+}
+function tx(mode, fn){
+  return new Promise((res, rej) => {
+    const t = db.transaction("notes", mode);
+    const rq = fn(t.objectStore("notes"));
+    t.oncomplete = () => res(rq && rq.result);
+    t.onerror = () => rej(t.error);
+  });
+}
+const dbAll = () => tx("readonly", s => s.getAll());
+const dbGet = id => tx("readonly", s => s.get(id));
+const dbPut = n => tx("readwrite", s => s.put(n));
+const dbDel = id => tx("readwrite", s => s.delete(id));
+
+/* ---------- Selección y comandos de formato ---------- */
+document.addEventListener("selectionchange", () => {
+  const s = getSelection();
+  if (s.rangeCount && ed.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange();
+});
+function restore(){
+  ed.focus();
+  if (saved){ const s = getSelection(); s.removeAllRanges(); s.addRange(saved); }
+}
+function cmd(c, v = null){
+  restore();
+  document.execCommand("styleWithCSS", false, true);
+  document.execCommand(c, false, v);
+  dirty = true;
+}
+document.querySelectorAll("#bar button, #foot button").forEach(b =>
+  b.addEventListener("mousedown", e => e.preventDefault()));
+document.querySelectorAll("[data-cmd]").forEach(b =>
+  b.addEventListener("click", () => cmd(b.dataset.cmd)));
+$("#font").onchange = e => cmd("fontName", e.target.value);
+$("#size").onchange = e => cmd("fontSize", e.target.value);
+
+/* ---------- Selector de colores ---------- */
+const TXT = ["#000000","#424242","#9e9e9e","#ffffff","#d32f2f","#e91e63","#9c27b0","#673ab7","#3f51b5","#2196f3",
+             "#00bcd4","#009688","#4caf50","#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722","#795548"];
+const PAGES = ["#fff9c4","#ffffff","#c8e6c9","#bbdefb","#f8bbd0","#ffe0b2","#e1bee7","#cfd8dc","#b2ebf2","#dcedc8",
+               "#fff3e0","#f0f4c3","#d7ccc8","#ffcdd2","#e8eaf6"];
+let colorCb = null;
+function pickColor(title, colors, allowNone, cb){
+  $("#mt").textContent = title;
+  $("#hex").value = "";
+  $("#mnone").style.display = allowNone ? "" : "none";
+  const g = $("#grid"); g.innerHTML = "";
+  colors.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "sw"; b.style.background = c;
+    b.onclick = () => { closeModal(); cb(c); };
+    g.append(b);
+  });
+  colorCb = cb;
+  $("#modal").classList.add("show");
+}
+function closeModal(){ $("#modal").classList.remove("show"); }
+$("#mcl").onclick = closeModal;
+$("#mnone").onclick = () => { closeModal(); colorCb("transparent"); };
+$("#mok").onclick = () => {
+  const v = $("#hex").value.trim();
+  if (/^#?[0-9a-fA-F]{6}$/.test(v)){ closeModal(); colorCb(v[0] === "#" ? v : "#" + v); }
+  else toast("Escribe un color como #FF8800");
+};
+$("#bcolor").onclick = () => pickColor("Color del texto", TXT, false, c => cmd("foreColor", c));
+$("#bhl").onclick = () => pickColor("Marcador (resaltar)", TXT, true, c => cmd("hiliteColor", c));
+$("#bpage").onclick = () => pickColor("Color de la hoja", PAGES, false, c => setColor(c));
+
+/* ---------- Páginas ---------- */
+function stash(){ note.pages[cur].html = ed.innerHTML; }
+function show(){
+  ed.innerHTML = note.pages[cur].html;
+  ed.style.background = note.pages[cur].color;
+  $("#pg").textContent = (cur + 1) + " / " + note.pages.length;
+}
+function setColor(c){
+  note.pages[cur].color = c;
+  ed.style.background = c;
+  dirty = true;
+}
+$("#prev").onclick = () => { if (cur > 0){ stash(); cur--; show(); } };
+$("#next").onclick = () => { if (cur < note.pages.length - 1){ stash(); cur++; show(); } };
+$("#addp").onclick = () => {
+  stash();
+  note.pages.splice(cur + 1, 0, {html: "", color: note.pages[cur].color});
+  cur++; show(); dirty = true; toast("Página añadida");
+};
+$("#delp").onclick = () => {
+  if (note.pages.length === 1){ ed.innerHTML = ""; dirty = true; return; }
+  if (!confirm("¿Eliminar esta página?")) return;
+  note.pages.splice(cur, 1); cur = Math.max(0, cur - 1); show(); dirty = true;
+};
+ed.addEventListener("input", () => dirty = true);
+$("#title").addEventListener("input", () => dirty = true);
+
+/* ---------- Guardar y abrir notas ---------- */
+async function save(silent){
+  stash();
+  note.title = $("#title").value.trim() || "Sin título";
+  if (!note.id) note.id = uid();
+  note.updated = Date.now();
+  await dbPut(note);
+  dirty = false;
+  if (!silent) toast("Guardado ✓");
+  loadList();
+}
+$("#save").onclick = () => save(false);
+setInterval(() => { if (dirty) save(true); }, 6000);
+
+function blank(){ return {id: null, title: "", pages: [{html: "", color: "#fff9c4"}]}; }
+$("#new").onclick = async () => {
+  if (dirty) await save(true);
+  note = blank(); cur = 0; $("#title").value = ""; show(); dirty = false;
+  $("#drawer").classList.remove("open"); toast("Nota nueva");
+};
+async function openNote(id){
+  if (dirty) await save(true);
+  note = await dbGet(id); cur = 0;
+  $("#title").value = note.title; show(); dirty = false;
+  $("#drawer").classList.remove("open");
+}
+async function loadList(){
+  const arr = (await dbAll()).sort((a, b) => b.updated - a.updated);
+  const box = $("#list"); box.innerHTML = "";
+  if (!arr.length) box.innerHTML = "<p style='padding:14px'>Aún no hay notas</p>";
+  arr.forEach(n => {
+    const row = document.createElement("div"); row.className = "item";
+    const t = document.createElement("span");
+    t.textContent = n.title + " · " + new Date(n.updated).toLocaleDateString();
+    t.onclick = () => openNote(n.id);
+    const x = document.createElement("button"); x.textContent = "🗑️";
+    x.onclick = async () => {
+      if (!confirm("¿Borrar esta nota?")) return;
+      await dbDel(n.id);
+      if (note.id === n.id){ note = blank(); cur = 0; $("#title").value = ""; show(); dirty = false; }
+      loadList();
+    };
+    row.append(t, x); box.append(row);
+  });
+}
+$("#menu").onclick = () => { $("#drawer").classList.toggle("open"); loadList(); };
+ed.addEventListener("focus", () => $("#drawer").classList.remove("open"));
+
+/* ---------- Grabación de audio ---------- */
+let rec = null, chunks = [], stream = null;
+$("#rec").onclick = async () => {
+  const btn = $("#rec");
+  if (rec && rec.state === "recording"){ rec.stop(); return; }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({audio: true});
+  } catch (e) {
+    alert("No se pudo acceder al micrófono. Da permiso de micrófono a Cpe Notes en los ajustes del teléfono.");
+    return;
+  }
+  chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    btn.classList.remove("on"); btn.textContent = "🎙️ Grabar";
+    const blob = new Blob(chunks, {type: rec.mimeType || "audio/webm"});
+    const fr = new FileReader();
+    fr.onload = () => {
+      restore();
+      document.execCommand("insertHTML", false,
+        '<div contenteditable="false"><audio controls src="' + fr.result + '"></audio></div><div><br></div>');
+      dirty = true; toast("Audio añadido 🎙️");
+    };
+    fr.readAsDataURL(blob);
+  };
+  rec.start();
+  btn.classList.add("on"); btn.textContent = "⏹️ Detener";
+};
+
+/* ---------- Inicio ---------- */
+openDB().then(() => { show(); loadList(); });
+</script>
+</body>
+</html>
