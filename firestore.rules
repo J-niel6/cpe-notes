@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function me() { return request.auth != null; }
+    function adm() {
+      return me() && exists(/databases/$(db)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(db)/documents/admins/$(request.auth.uid)).data.until > request.time;
+    }
+    function keys() { return get(/databases/$(db)/documents/config/keys).data; }
+
+    match /config/{d} { allow read, write: if false; }
+    match /users/{u} {
+      allow read: if (me() && request.auth.uid == u) || adm();
+      allow write: if me() && request.auth.uid == u;
+    }
+    match /usernames/{n} {
+      allow read: if me();
+      allow create: if me() && request.resource.data.uid == request.auth.uid;
+    }
+    match /bans/{u} {
+      allow read: if (me() && request.auth.uid == u) || adm();
+      allow write: if adm();
+    }
+    match /admins/{u} {
+      allow read, delete: if me() && request.auth.uid == u;
+      allow create, update: if me() && request.auth.uid == u
+        && request.resource.data.until < request.time + duration.value(3, 'h')
+        && ((request.resource.data.level == 'owner' && request.resource.data.key == keys().owner)
+         || (request.resource.data.level == 'staff' && request.resource.data.key == keys().staff));
+    }
+  }
+}
