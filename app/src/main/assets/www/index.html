@@ -72,7 +72,7 @@ h1,h2,h3{margin:0}h3{margin:16px 0 8px}
 .sg{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .sw{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);padding:0}
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:20px;opacity:0;transition:.3s;z-index:60;pointer-events:none}#toast.on{opacity:1}
-</style></head><body>
+</style><link rel="stylesheet" href="skin.css"></head><body>
 
 <section id="home" class="tab on">
   <div class="top"><div class="logo">📝</div><div><h1>Cpe Notes</h1><p>Tus ideas, siempre contigo 💜</p></div><button id="sbtn">🔍</button></div>
@@ -271,4 +271,4 @@ setInterval(()=>{const d=new Date(),nk=key(d)+"T"+String(d.getHours()).padStart(
 /* ---- inicio ---- */
 theme();
 openDB().then(async()=>{notes=await dbAll();notes.forEach(n=>{if(n.txt==null)idx(n)});render();cal()});
-</script><script src="config.js"></script><script src="extra.js"></script></body></html>
+</script><script src="config.js"></script><script src="extra.js"></script><script src="skin.js"></script></body></html>
