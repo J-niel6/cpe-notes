@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -26,6 +30,39 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCb;
 
     class Bridge {
+        PendingIntent pi(String id, String t) {
+            Intent i = new Intent(MainActivity.this, Alarm.class);
+            i.putExtra("t", t);
+            i.putExtra("id", id.hashCode());
+            return PendingIntent.getBroadcast(MainActivity.this, id.hashCode(), i,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
+
+        @JavascriptInterface
+        public void schedule(final String id, final String t, final long when) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                            != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 3);
+                    }
+                    ((AlarmManager) getSystemService(Context.ALARM_SERVICE))
+                            .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi(id, t));
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void cancel(final String id) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ((AlarmManager) getSystemService(Context.ALARM_SERVICE)).cancel(pi(id, ""));
+                }
+            });
+        }
+
         @JavascriptInterface
         public void share(final String text) {
             runOnUiThread(new Runnable() {

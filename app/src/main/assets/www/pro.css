@@ -1,0 +1,18 @@
+#pro{z-index:80;background:radial-gradient(60% 35% at 100% 0%,rgba(var(--accrgb),.35),transparent 70%),var(--bg)}
+#sh{z-index:120}#toast{z-index:130}
+.qa{display:flex;gap:8px;overflow-x:auto;margin:0 0 12px}
+.qa button{display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:16px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(12px);white-space:nowrap;font-size:14px}.qa b{font-size:18px}
+#sfc{margin:0 0 10px}#sfc button{min-width:0;flex-direction:row;padding:6px 12px;font-size:13px;border-radius:14px}
+.gh{grid-column:1/-1;font-size:13px;color:var(--mut);font-weight:bold;margin:6px 2px 0}
+.card.pinned{box-shadow:0 0 0 1.5px var(--acc),0 10px 26px rgba(var(--accrgb),.35)}
+.fi{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-style:normal;flex:none;color:#fff}
+.sw.on{outline:3px solid var(--acc);outline-offset:2px}.sw.ic{font-size:20px;background:var(--card2)}
+.tg{padding:6px 12px;border-radius:14px;background:var(--card2)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stc{padding:14px;border-radius:20px;background:var(--card);border:1px solid var(--line);backdrop-filter:blur(12px);animation:pop .3s both}.stc b{display:block;font-size:26px}
+.bar{height:10px;border-radius:6px;background:var(--card2);overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.cols{display:flex;align-items:flex-end;gap:8px;height:100px}.cols div{flex:1;text-align:center;font-size:11px;color:var(--mut)}.cols i{display:block;border-radius:8px 8px 4px 4px;background:linear-gradient(var(--acc2),var(--acc));margin-bottom:4px;min-height:4px}
+.pu{animation:pu .5s}@keyframes pu{40%{transform:scale(1.2);color:var(--acc2)}}
+.mini .card{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;backdrop-filter:none}
+.grad .card{background:linear-gradient(145deg,rgba(var(--accrgb),.55),rgba(var(--accrgb),.1))}
+.clear .card{background:transparent;box-shadow:none;border:1px solid var(--line);backdrop-filter:none}
