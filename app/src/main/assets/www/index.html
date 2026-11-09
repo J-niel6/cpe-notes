@@ -132,7 +132,7 @@ function fmt(t){const d=new Date(t),n=new Date(),h=d.toLocaleTimeString([],{hour
 let db;
 const openDB=()=>new Promise((res,rej)=>{const r=indexedDB.open("cpenotes",1);r.onupgradeneeded=()=>r.result.createObjectStore("notes",{keyPath:"id"});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
 const tx=(m,f)=>new Promise((res,rej)=>{const t=db.transaction("notes",m),q=f(t.objectStore("notes"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)});
-const dbAll=()=>tx("readonly",s=>s.getAll()),dbPut=n=>tx("readwrite",s=>s.put(n)),dbDel=id=>tx("readwrite",s=>s.delete(id));
+let dbAll=()=>tx("readonly",s=>s.getAll()),dbPut=n=>tx("readwrite",s=>s.put(n)),dbDel=id=>tx("readwrite",s=>s.delete(id));
 
 /* ---- hojas inferiores ---- */
 function sheet(title,html,after){$("#shb").innerHTML="<h3 style='margin-top:0'>"+title+"</h3>"+html;$("#sh").classList.add("on");after&&after($("#shb"))}
@@ -271,4 +271,4 @@ setInterval(()=>{const d=new Date(),nk=key(d)+"T"+String(d.getHours()).padStart(
 /* ---- inicio ---- */
 theme();
 openDB().then(async()=>{notes=await dbAll();notes.forEach(n=>{if(n.txt==null)idx(n)});render();cal()});
-</script><script src="config.js"></script><script src="extra.js"></script><script src="skin.js"></script><script src="pro.js"></script></body></html>
+</script><script src="config.js"></script><script src="extra.js"></script><script src="skin.js"></script><script src="pro.js"></script><script src="sync.js"></script></body></html>

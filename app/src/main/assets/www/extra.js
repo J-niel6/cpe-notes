@@ -29,9 +29,14 @@ function showBan(b){const a=$("#auth");a.classList.add("on");a.innerHTML=`<h2>�
 function logout(){au=null;store();localStorage.removeItem("cpe_ban");location.reload()}
 async function hb(){if(!au)return;try{if(Date.now()-lastRef>45*6e4)await refresh();await fpatch("/users/"+au.uid,{lastSeen:Date.now()});const b=await banned();if(b)showBan(b)}catch(e){}}
 function start(){$("#auth").classList.remove("on");hb();clearInterval(hbt);hbt=setInterval(hb,6e4)}
+function forgot(){const a=$("#auth");a.innerHTML=`<h2>🔑 Recuperar contraseña</h2><p class="mut">Escribe el correo de tu cuenta. Te enviaremos un correo con un enlace seguro para crear una contraseña nueva.</p><input id="fe2" type="email" placeholder="Correo electrónico"><div class="err" id="fr2"></div><button class="big" id="fs2">Enviar correo</button><button class="big" id="fb2" style="background:var(--card2);box-shadow:none">Volver</button>`;
+  $("#fb2").onclick=()=>showAuth("in");
+  $("#fs2").onclick=async()=>{const m=$("#fe2").value.trim(),r=$("#fr2");r.style.color="";if(!/^\S+@\S+\.\S+$/.test(m))return r.textContent="Escribe un correo válido";r.textContent="Enviando…";
+    try{await idt("sendOobCode",{requestType:"PASSWORD_RESET",email:m});r.style.color="#4ade80";r.textContent="✅ Listo. Revisa tu correo (y la carpeta de spam), toca el enlace y crea tu contraseña nueva. Después vuelve aquí e inicia sesión."}
+    catch(x){r.textContent=/EMAIL_NOT_FOUND/.test(x.message)?"Ese correo no está registrado":msg(x)}}}
 function showAuth(mode="in"){const a=$("#auth"),up=mode=="up";a.classList.add("on");
-  a.innerHTML=`<h2>📝 Cpe Notes</h2><div class="seg"><button id="ti" class="${up?"":"on"}">Iniciar sesión</button><button id="tu" class="${up?"on":""}">Crear cuenta</button></div><p></p><input id="fe" type="email" placeholder="Correo electrónico"><input id="fu" class="${up?"":"hid"}" placeholder="Nombre de usuario"><input id="fp" type="password" placeholder="Contraseña (mín. 6)"><div class="err" id="fr"></div><button class="big" id="fb">${up?"Registrarme":"Entrar"}</button>`;
-  $("#ti").onclick=()=>showAuth("in");$("#tu").onclick=()=>showAuth("up");
+  a.innerHTML=`<h2>📝 Cpe Notes</h2><div class="seg"><button id="ti" class="${up?"":"on"}">Iniciar sesión</button><button id="tu" class="${up?"on":""}">Crear cuenta</button></div><p></p><input id="fe" type="email" placeholder="Correo electrónico"><input id="fu" class="${up?"":"hid"}" placeholder="Nombre de usuario"><input id="fp" type="password" placeholder="Contraseña (mín. 6)"><div class="err" id="fr"></div><button class="big" id="fb">${up?"Registrarme":"Entrar"}</button>${up?"":`<p style="text-align:center;margin-top:18px"><a id="ff" style="color:var(--acc2);text-decoration:underline">¿Has olvidado tu contraseña?</a></p>`}`;
+  $("#ti").onclick=()=>showAuth("in");if(!up)$("#ff").onclick=forgot;$("#tu").onclick=()=>showAuth("up");
   $("#fb").onclick=async()=>{$("#fr").textContent="Un momento…";try{const e=$("#fe").value.trim(),p=$("#fp").value;if(up)await signup(e,$("#fu").value,p);else await signin(e,p);const b=await banned();if(b)return showBan(b);start()}catch(x){$("#fr").textContent=msg(x)}}}
 async function boot(){if(!FB.apiKey)return;
   if(au){try{await refresh()}catch(e){if(e instanceof TypeError)off=true;else{au=null;store()}}}
@@ -66,5 +71,6 @@ renderSet=function(){rs();const d=S.trashDays||0,o=[[0,"Nunca"],[1,"1 día"],[7,
   $("#sett").insertAdjacentHTML("beforeend",`<h3>Papelera</h3><div class="item"><b>Vaciar automáticamente</b><select id="st">${o.map(([v,l])=>`<option value="${v}"${(std?v==d:v==-1)?" selected":""}>${v==-1&&!std?d+" días":l}</option>`).join("")}</select></div>`+(FB.apiKey?`<h3>Cuenta</h3><div class="item"><b>${au?esc(au.user||au.email):"Sin sesión"}</b><button id="so">Cerrar sesión</button></div><button class="mi" id="sa">🛡️ Panel de administración</button>`:""));
   $("#st").onchange=e=>{let v=+e.target.value;if(v==-1){v=parseInt(prompt("¿Cada cuántos días vaciar la papelera?","30"));if(!(v>0))return renderSet()}S.trashDays=v;saveS();purge();renderSet()};
   if(FB.apiKey){$("#so").onclick=()=>confirm("¿Cerrar sesión?")&&logout();$("#sa").onclick=enterAdmin}};
+window.CPE={fs,fpatch,fo,refresh,au:()=>au};
 boot();
 })();

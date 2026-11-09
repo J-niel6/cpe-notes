@@ -16,3 +16,4 @@
 .mini .card{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;backdrop-filter:none}
 .grad .card{background:linear-gradient(145deg,rgba(var(--accrgb),.55),rgba(var(--accrgb),.1))}
 .clear .card{background:transparent;box-shadow:none;border:1px solid var(--line);backdrop-filter:none}
+#syn{display:inline-block;margin-top:4px;font-size:12px;padding:2px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
